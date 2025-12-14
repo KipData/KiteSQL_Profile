@@ -93,13 +93,21 @@ const extractValue = (v: any) => {
   return finalValue;
 };
 
-function renderRows(rows: any[]) {
+const columnNamesFromSchema = (schema: any) => {
+  if (!Array.isArray(schema)) return [];
+  return schema
+    .map((col) => (typeof col?.name === "string" ? col.name : undefined))
+    .filter((name): name is string => Boolean(name));
+};
+
+function renderRows(rows: any[], columnNames?: string[]) {
   if (!rows.length) {
     outputEl.textContent = "No rows returned.";
     return;
   }
 
   const columns =
+    (columnNames && columnNames.length ? columnNames : undefined) ??
     rows[0]?.columns ??
     rows[0]?.keys ??
     rows[0]?.names ??
@@ -153,9 +161,11 @@ async function seedDemoData(showResult = true) {
 
   if (showResult) {
     const result = db.run("select * from t_demo order by score desc");
+    const schema = typeof (result as any).schema === "function" ? (result as any).schema() : null;
+    const columns = columnNamesFromSchema(schema);
     const rows = result.rows();
     result.finish();
-    renderRows(rows);
+    renderRows(rows, columns ?? undefined);
     setStatus("Demo data ready ✓", true);
   } else {
     setStatus("Demo data ready ✓", true);
@@ -185,10 +195,13 @@ async function runSql(sqlText: string) {
     }
 
     let lastRows: any[] | null = null;
+    let lastColumns: string[] | null = null;
     for (const sql of statements) {
       const isQuery = /^(select|with|pragma|explain)/i.test(sql.trim());
       if (isQuery) {
         const result = db!.run(sql);
+        const schema = typeof (result as any).schema === "function" ? (result as any).schema() : null;
+        lastColumns = columnNamesFromSchema(schema);
         lastRows = result.rows();
         result.finish();
       } else {
@@ -197,7 +210,7 @@ async function runSql(sqlText: string) {
     }
 
     if (lastRows) {
-      renderRows(lastRows);
+      renderRows(lastRows, lastColumns ?? undefined);
       setStatus("Query completed ✓", true);
     } else {
       outputEl.textContent = `Executed ${statements.length} statement(s).`;

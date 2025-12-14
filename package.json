@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "kite_sql": "^0.1.3"
+    "@kipdata/kite_sql": "^0.1.4"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",

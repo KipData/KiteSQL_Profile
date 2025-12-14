@@ -4,10 +4,11 @@
 // Based on the upstream glue with minimal changes for ESM + browsers.
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
-import wasmUrl from "kite_sql/kite_sql_bg.wasm?url";
+import wasmUrl from "@kipdata/kite_sql/kite_sql_bg.wasm?url";
 
 const placeholder: any = {};
-const imports: any = { __wbindgen_placeholder__: placeholder };
+// The wasm expects its JS imports under the module name "./kite_sql_bg.js".
+const imports: any = { "./kite_sql_bg.js": placeholder };
 let wasm: any;
 
 function addToExternrefTable0(obj) {
@@ -189,23 +190,34 @@ class WasmResultIter {
   free() {
     const ptr = this.__destroy_into_raw();
     wasm.__wbg_wasmresultiter_free(ptr, 0);
-  }
-  /**
-   * Returns the next row as a JS object, or `undefined` when done.
-   * @returns {any}
-   */
-  next() {
-    const ret = wasm.wasmresultiter_next(this.__wbg_ptr);
-    if (ret[2]) {
-      throw takeFromExternrefTable0(ret[1]);
     }
-    return takeFromExternrefTable0(ret[0]);
-  }
-  /**
-   * Collect all remaining rows into an array and finish the iterator.
-   * @returns {any}
-   */
-  rows() {
+    /**
+     * Returns the next row as a JS object, or `undefined` when done.
+     * @returns {any}
+     */
+    next() {
+      const ret = wasm.wasmresultiter_next(this.__wbg_ptr);
+      if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+      }
+      return takeFromExternrefTable0(ret[0]);
+    }
+    /**
+     * Returns the output schema as an array of `{ name, datatype, nullable }`.
+     * @returns {any}
+     */
+    schema() {
+      const ret = wasm.wasmresultiter_schema(this.__wbg_ptr);
+      if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+      }
+      return takeFromExternrefTable0(ret[0]);
+    }
+    /**
+     * Collect all remaining rows into an array and finish the iterator.
+     * @returns {any}
+     */
+    rows() {
     const ret = wasm.wasmresultiter_rows(this.__wbg_ptr);
     if (ret[2]) {
       throw takeFromExternrefTable0(ret[1]);
@@ -335,9 +347,10 @@ async function init(input = wasmUrl) {
   const { instance, module } = await (async () => {
     const res = await response;
     if (res instanceof Response) {
+      const resForStreaming = res.clone();
       if (typeof WebAssembly.instantiateStreaming === "function") {
         try {
-          return await WebAssembly.instantiateStreaming(res, imports);
+          return await WebAssembly.instantiateStreaming(resForStreaming, imports);
         } catch (e) {
           // Fallback if incorrect MIME type.
           const bytes = await res.arrayBuffer();
