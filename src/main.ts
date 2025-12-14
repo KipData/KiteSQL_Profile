@@ -3,6 +3,10 @@ import initKiteSql, { WasmDatabase } from "./kite-sql-web";
 const app = document.querySelector<HTMLElement>("#app");
 if (!app) throw new Error("app root missing");
 
+const assetBase = import.meta.env.BASE_URL;
+const logoLight = `${assetBase}images/kite_sql_light.png`;
+const logoDark = `${assetBase}images/kite_sql_dark.png`;
+
 const ui = document.createElement("div");
 ui.className = "card";
 ui.innerHTML = `
@@ -39,8 +43,8 @@ ui.innerHTML = `
     <div class="star-cta">Star plz <span class="finger">👉</span></div>
     <a class="powered" href="https://github.com/KipData/KiteSQL" target="_blank" rel="noreferrer">
       <span>Powered by</span>
-      <img class="logo-img light" src="/images/kite_sql_light.png" alt="KiteSQL logo (light)" />
-      <img class="logo-img dark" src="/images/kite_sql_dark.png" alt="KiteSQL logo (dark)" />
+      <img class="logo-img light" src="${logoLight}" alt="KiteSQL logo (light)" />
+      <img class="logo-img dark" src="${logoDark}" alt="KiteSQL logo (dark)" />
     </a>
   </div>
 `;
